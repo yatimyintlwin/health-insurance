@@ -1,0 +1,89 @@
+# --- Maven ---
+target/
+!.mvn/wrapper/maven-wrapper.jar
+.mvn/wrapper/maven-wrapper.properties
+.mvn/timing.properties
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+
+# --- Compiled class files ---
+*.class
+*.jar
+*.war
+*.ear
+
+# --- Logs and temp files ---
+*.log
+logs/
+*.tmp
+*.out
+*.err
+hs_err_pid*
+replay_pid*
+
+# --- Spring Boot ---
+# Local configuration files
+application-*.yml
+application-*.yaml
+application-*.properties
+!application-example.yml
+!application-example.properties
+
+# --- AWS / DynamoDB ---
+# AWS credentials and config files
+.aws/
+*.pem
+*.key
+*.crt
+*.p12
+
+# Local DynamoDB data directory (if you use DynamoDB Local)
+.dynamodb/
+dynamodb_local_db/
+dynamodb/
+
+# --- IntelliJ IDEA ---
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# --- Eclipse ---
+.project
+.classpath
+.settings/
+.bin/
+
+# --- VS Code ---
+.vscode/
+
+# --- OS-specific ---
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# --- Other tools ---
+# JetBrains Fleet
+.fleet/
+
+# --- Temporary files ---
+*~
+*.swp
+*.swo
+*.bak
+*.orig
+*.rej
