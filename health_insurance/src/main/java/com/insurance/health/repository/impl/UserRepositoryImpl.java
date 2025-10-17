@@ -21,7 +21,7 @@ public class UserRepositoryImpl implements UserRepository {
     @Override
     public AppUser save(AppUser appUser) {
         Map<String, AttributeValue> profileItem = Map.ofEntries(
-                Map.entry("pk", AttributeValue.fromS("CUSTOMER")),
+                Map.entry("pk", AttributeValue.fromS("USER")),
                 Map.entry("sk", AttributeValue.fromS("PROFILE#" + appUser.getId())),
                 Map.entry("id", AttributeValue.fromS(appUser.getId())),
                 Map.entry("username", AttributeValue.fromS(appUser.getName())),
@@ -35,6 +35,7 @@ public class UserRepositoryImpl implements UserRepository {
                 Map.entry("pk", AttributeValue.fromS("EMAIL#" + appUser.getEmail())),
                 Map.entry("sk", AttributeValue.fromS("LOGIN")),
                 Map.entry("id", AttributeValue.fromS(appUser.getId())),
+                Map.entry("role", AttributeValue.fromS(appUser.getRole().toUpperCase())),
                 Map.entry("password", AttributeValue.fromS(appUser.getPassword()))
         );
 
@@ -88,6 +89,7 @@ public class UserRepositoryImpl implements UserRepository {
                 user.setId(item.get("id").s());
                 user.setEmail(email);
                 user.setPassword(item.get("password").s());
+                user.setRole(item.get("role").s());
 
                 return Optional.of(user);
             }

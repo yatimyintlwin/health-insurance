@@ -2,6 +2,7 @@ package com.insurance.health.service.impl;
 
 import com.insurance.health.dto.LoginRequest;
 import com.insurance.health.dto.RegisterRequest;
+import com.insurance.health.dto.RegisterResponse;
 import com.insurance.health.model.AppUser;
 import com.insurance.health.repository.UserRepository;
 import com.insurance.health.service.UserService;
@@ -35,7 +36,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public AppUser register(RegisterRequest request) {
+    public RegisterResponse register(RegisterRequest request) {
         AppUser appUser = new AppUser();
         appUser.setId(UUID.randomUUID().toString());
         appUser.setName(request.getName());
@@ -44,7 +45,14 @@ public class UserServiceImpl implements UserService {
         appUser.setRole(request.getRole().toUpperCase());
         appUser.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        return userRepository.save(appUser);
+        AppUser savedAppUser = userRepository.save(appUser);
+        RegisterResponse registerResponse = new RegisterResponse();
+        registerResponse.setId(savedAppUser.getId());
+        registerResponse.setEmail(savedAppUser.getEmail());
+        registerResponse.setName(savedAppUser.getName());
+        registerResponse.setGender(savedAppUser.getGender());
+
+        return registerResponse;
     }
 
     @Override

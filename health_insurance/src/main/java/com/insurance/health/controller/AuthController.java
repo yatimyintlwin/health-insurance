@@ -4,7 +4,7 @@ import com.insurance.health.dto.LoginRequest;
 import com.insurance.health.dto.LoginResponse;
 
 import com.insurance.health.dto.RegisterRequest;
-import com.insurance.health.model.AppUser;
+import com.insurance.health.dto.RegisterResponse;
 import com.insurance.health.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,7 +23,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<AppUser> register(@RequestBody RegisterRequest request) {
+    public ResponseEntity<RegisterResponse> register(@RequestBody RegisterRequest request) {
         return ResponseEntity.ok(userService.register(request));
     }
 
