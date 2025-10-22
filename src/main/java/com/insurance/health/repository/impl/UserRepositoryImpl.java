@@ -1,13 +1,17 @@
 package com.insurance.health.repository.impl;
 
+import com.insurance.health.exception.UserAlreadyExistException;
+import com.insurance.health.exception.UserNotFoundException;
 import com.insurance.health.model.AppUser;
 import com.insurance.health.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
 import java.util.*;
 
+@Slf4j
 @Repository
 public class UserRepositoryImpl implements UserRepository {
 
@@ -58,8 +62,13 @@ public class UserRepositoryImpl implements UserRepository {
                 ))
                 .build();
 
-        dynamoDbClient.transactWriteItems(transactionRequest);
-        return appUser;
+        try {
+            dynamoDbClient.transactWriteItems(transactionRequest);
+            return appUser;
+        } catch (ConditionalCheckFailedException e) {
+            log.warn("Failed to save user '{}': user already exists", appUser.getName());
+            throw new UserAlreadyExistException("User " + appUser.getName() + " already exists");
+        }
     }
 
     @Override
@@ -84,8 +93,10 @@ public class UserRepositoryImpl implements UserRepository {
             user.setEmail(email);
             user.setPassword(item.get("password").s());
             user.setRole(item.get("role").s());
+            log.info("Found user by email: {}", email);
             return Optional.of(user);
         }
+        log.warn("User not found with email: {}", email);
         return Optional.empty();
     }
 
@@ -107,6 +118,7 @@ public class UserRepositoryImpl implements UserRepository {
                 user.setGender(item.get("gender").s());
                 user.setRole(item.get("role").s());
                 user.setPassword(item.get("password").s());
+                log.info("Found user: ID={}, Username={}", id, user.getName());
                 return Optional.of(user);
             }
         }
@@ -133,12 +145,18 @@ public class UserRepositoryImpl implements UserRepository {
             user.setRole(item.get("role").s());
             users.add(user);
         }
-
+        log.info("Found {} users", users.size());
         return users;
     }
 
     @Override
     public AppUser update(AppUser user) {
+        Optional<AppUser> existingUser = findById(user.getId());
+        if (existingUser.isEmpty()) {
+            log.warn("Failed to update user: User with ID '{}' not found", user.getId());
+            throw new UserNotFoundException("User with id '" + user.getId() + "' not found");
+        }
+
         Map<String, AttributeValueUpdate> updates = new HashMap<>();
         updates.put("username", AttributeValueUpdate.builder()
                 .value(AttributeValue.fromS(user.getName()))
@@ -157,11 +175,18 @@ public class UserRepositoryImpl implements UserRepository {
                         "sk", AttributeValue.fromS("PROFILE#" + user.getId())
                 ))
                 .attributeUpdates(updates)
+                .conditionExpression("attribute_exists(pk) AND attribute_exists(sk)")
                 .returnValues(ReturnValue.ALL_NEW)
                 .build();
 
-        dynamoDbClient.updateItem(request);
-        return user;
+        try {
+            dynamoDbClient.updateItem(request);
+            log.info("Successfully updated user: ID={}, Username={}", user.getId(), user.getName());
+            return user;
+        } catch (ConditionalCheckFailedException e) {
+            log.warn("Failed to update user: User with ID '{}' not found", user.getId());
+            throw new UserNotFoundException("User with id '" + user.getId() + "' not found");
+        }
     }
 
     @Override
@@ -175,6 +200,7 @@ public class UserRepositoryImpl implements UserRepository {
                                                 "pk", AttributeValue.fromS("USER"),
                                                 "sk", AttributeValue.fromS("PROFILE#" + id)
                                         ))
+                                        .conditionExpression("attribute_exists(pk) AND attribute_exists(sk)")
                                         .build())
                                 .build(),
                         TransactWriteItem.builder()
@@ -184,11 +210,18 @@ public class UserRepositoryImpl implements UserRepository {
                                                 "pk", AttributeValue.fromS("EMAIL#" + email),
                                                 "sk", AttributeValue.fromS("LOGIN")
                                         ))
+                                        .conditionExpression("attribute_exists(pk) AND attribute_exists(sk)")
                                         .build())
                                 .build()
                 ))
                 .build();
 
-        dynamoDbClient.transactWriteItems(transactionRequest);
+        try {
+            dynamoDbClient.transactWriteItems(transactionRequest);
+            log.info("Deleted user successfully: ID={}, Email={}", id, email);
+        } catch (TransactionCanceledException e) {
+            log.warn("Failed to delete user: User with ID '{}' and Email '{}' not found", id, email);
+            throw new UserNotFoundException("User with ID '" + id + "' not found or already deleted");
+        }
     }
 }
