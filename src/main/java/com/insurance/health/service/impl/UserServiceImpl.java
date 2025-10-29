@@ -41,7 +41,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public RegisterResponse register(RegisterRequest request) {
         AppUser appUser = new AppUser();
-        appUser.setId(UUID.randomUUID().toString());
+        appUser.setId("C" + UUID.randomUUID().toString().substring(0, 5).toUpperCase());
         appUser.setName(request.getName());
         appUser.setEmail(request.getEmail());
         appUser.setGender(request.getGender());
