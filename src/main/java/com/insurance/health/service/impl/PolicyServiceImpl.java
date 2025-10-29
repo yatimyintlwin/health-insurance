@@ -35,7 +35,7 @@ public class PolicyServiceImpl implements PolicyService {
         policy.setPremiumAmount(request.getPremiumAmount());
         policy.setStartDate(startDate);
         policy.setEndDate(endDate);
-        policy.setStatus("Active");
+        policy.setStatus("Pending");
 
         return policyRepository.save(policy);
     }
