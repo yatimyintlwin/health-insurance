@@ -1,6 +1,7 @@
 package com.insurance.health.service.impl;
 
 import com.insurance.health.dto.PolicyDTO;
+import com.insurance.health.dto.PolicyListByCustomerResponse;
 import com.insurance.health.exception.PolicyNotFoundException;
 import com.insurance.health.model.Policy;
 import com.insurance.health.repository.PolicyRepository;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.UUID;
+import java.util.List;
 
 @Service
 public class PolicyServiceImpl implements PolicyService {
@@ -51,5 +53,23 @@ public class PolicyServiceImpl implements PolicyService {
 
         return policyRepository.findById(policyId)
                 .orElseThrow(() -> new PolicyNotFoundException("Policy not found: " + policyId));
+    }
+
+    @Override
+    public List<PolicyListByCustomerResponse> listPoliciesByCustomer(String customerId) {
+        return policyRepository.findPoliciesByCustomer(customerId);
+    }
+
+    @Override
+    public boolean updatePolicy(Policy policy) {
+        String pkValue = "CUSTOMER#" + policy.getUserId();
+        String skValue = "POLICY#" + policy.getPolicyId();
+
+        if (!policyRepository.isExist(pkValue, skValue)) {
+            return false;
+        }
+
+        policyRepository.update(policy);
+        return true;
     }
 }

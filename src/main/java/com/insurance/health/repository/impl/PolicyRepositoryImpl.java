@@ -1,6 +1,9 @@
 package com.insurance.health.repository.impl;
 
+import com.insurance.health.dto.PolicyListByCustomerResponse;
+import com.insurance.health.mapper.PolicyListMapper;
 import com.insurance.health.mapper.PolicyMapper;
+import com.insurance.health.mapper.PolicyUpdateMapper;
 import com.insurance.health.model.Policy;
 import com.insurance.health.repository.PolicyRepository;
 import org.springframework.stereotype.Repository;
@@ -23,52 +26,35 @@ public class PolicyRepositoryImpl implements PolicyRepository {
 
     @Override
     public Policy save(Policy policy) {
+        try {
+            Map<String, AttributeValue> policyItem = PolicyUpdateMapper.toCustomerItem(policy);
+            Map<String, AttributeValue> detailsItem = PolicyUpdateMapper.toDetailsItem(policy);
 
-        Map<String, AttributeValue> policyItem = Map.ofEntries(
-                Map.entry("pk", AttributeValue.fromS("CUSTOMER#" + policy.getUserId())),
-                Map.entry("sk", AttributeValue.fromS("POLICY#" + policy.getPolicyId())),
-                Map.entry("policyId", AttributeValue.fromS(policy.getPolicyId())),
-                Map.entry("policyDescription", AttributeValue.fromS(policy.getPolicyDescription())),
-                Map.entry("policyType", AttributeValue.fromS(policy.getPolicyType())),
-                Map.entry("status", AttributeValue.fromS(policy.getStatus()))
-        );
+            TransactWriteItemsRequest transactionRequest = TransactWriteItemsRequest.builder()
+                    .transactItems(List.of(
+                            TransactWriteItem.builder()
+                                    .put(Put.builder()
+                                            .tableName(tableName)
+                                            .item(policyItem)
+                                            .conditionExpression("attribute_not_exists(pk) AND attribute_not_exists(sk)")
+                                            .build())
+                                    .build(),
+                            TransactWriteItem.builder()
+                                    .put(Put.builder()
+                                            .tableName(tableName)
+                                            .item(detailsItem)
+                                            .conditionExpression("attribute_not_exists(pk) AND attribute_not_exists(sk)")
+                                            .build())
+                                    .build()
+                    ))
+                    .build();
 
-        Map<String, AttributeValue> detailsItem = Map.ofEntries(
-                Map.entry("pk", AttributeValue.fromS("POLICY#" + policy.getPolicyId())),
-                Map.entry("sk", AttributeValue.fromS("DETAILS")),
-                Map.entry("userId", AttributeValue.fromS(policy.getUserId())),
-                Map.entry("policyId", AttributeValue.fromS(policy.getPolicyId())),
-                Map.entry("policyDescription", AttributeValue.fromS(policy.getPolicyDescription())),
-                Map.entry("policyType", AttributeValue.fromS(policy.getPolicyType())),
-                Map.entry("startDate", AttributeValue.fromS(policy.getStartDate().toString())),
-                Map.entry("endDate", AttributeValue.fromS(policy.getEndDate().toString())),
-                Map.entry("premiumAmount", AttributeValue.fromN(String.valueOf(policy.getPremiumAmount()))),
-                Map.entry("coverageAmount", AttributeValue.fromN(String.valueOf(policy.getCoverageAmount()))),
-                Map.entry("status", AttributeValue.fromS(policy.getStatus()))
-        );
+            dynamoDbClient.transactWriteItems(transactionRequest);
+            return policy;
 
-        TransactWriteItemsRequest transactionRequest = TransactWriteItemsRequest.builder()
-                .transactItems(List.of(
-                        TransactWriteItem.builder()
-                                .put(Put.builder()
-                                        .tableName(tableName)
-                                        .item(policyItem)
-                                        .conditionExpression("attribute_not_exists(pk) AND attribute_not_exists(sk)")
-                                        .build())
-                                .build(),
-                        TransactWriteItem.builder()
-                                .put(Put.builder()
-                                        .tableName(tableName)
-                                        .item(detailsItem)
-                                        .conditionExpression("attribute_not_exists(pk) AND attribute_not_exists(sk)")
-                                        .build())
-                                .build()
-                ))
-                .build();
-
-        dynamoDbClient.transactWriteItems(transactionRequest);
-
-        return policy;
+        } catch (DynamoDbException e) {
+            throw new RuntimeException("Failed to save policy: " + policy.getPolicyId(), e);
+        }
     }
 
     @Override
@@ -85,7 +71,6 @@ public class PolicyRepositoryImpl implements PolicyRepository {
                     .build();
 
             GetItemResponse response = dynamoDbClient.getItem(request);
-
             return response.hasItem();
 
         } catch (DynamoDbException e) {
@@ -117,6 +102,55 @@ public class PolicyRepositoryImpl implements PolicyRepository {
 
         } catch (DynamoDbException ex) {
             throw new RuntimeException("Failed to fetch policy: " + policyId, ex);
+        }
+    }
+
+    @Override
+    public List<PolicyListByCustomerResponse> findPoliciesByCustomer(String customerId) {
+        String pkValue = "CUSTOMER#" + customerId;
+
+        QueryRequest queryRequest = QueryRequest.builder()
+                .tableName(tableName)
+                .keyConditionExpression("pk = :pk and begins_with(sk, :skPrefix)")
+                .expressionAttributeValues(Map.of(
+                        ":pk", AttributeValue.fromS(pkValue),
+                        ":skPrefix", AttributeValue.fromS("POLICY#")
+                ))
+                .build();
+
+        QueryResponse response = dynamoDbClient.query(queryRequest);
+        return PolicyListMapper.fromQueryItems(customerId, response.items());
+    }
+
+    @Override
+    public void update(Policy policy) {
+        try {
+            Map<String, AttributeValue> policyItem = PolicyUpdateMapper.toCustomerItem(policy);
+            Map<String, AttributeValue> detailsItem = PolicyUpdateMapper.toDetailsItem(policy);
+
+            TransactWriteItemsRequest transactionRequest = TransactWriteItemsRequest.builder()
+                    .transactItems(List.of(
+                            TransactWriteItem.builder()
+                                    .put(Put.builder()
+                                            .tableName(tableName)
+                                            .item(policyItem)
+                                            .conditionExpression("attribute_exists(pk) AND attribute_exists(sk)")
+                                            .build())
+                                    .build(),
+                            TransactWriteItem.builder()
+                                    .put(Put.builder()
+                                            .tableName(tableName)
+                                            .item(detailsItem)
+                                            .conditionExpression("attribute_exists(pk) AND attribute_exists(sk)")
+                                            .build())
+                                    .build()
+                    ))
+                    .build();
+
+            dynamoDbClient.transactWriteItems(transactionRequest);
+
+        } catch (DynamoDbException e) {
+            throw new RuntimeException("Failed to update policy: " + policy.getPolicyId(), e);
         }
     }
 }
