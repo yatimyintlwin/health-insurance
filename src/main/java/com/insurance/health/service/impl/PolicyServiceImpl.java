@@ -76,4 +76,17 @@ public class PolicyServiceImpl implements PolicyService {
 
         return policy;
     }
+
+    @Override
+    public String deletePolicy(String customerId, String policyId) {
+        String pkValue = "CUSTOMER#" + customerId;
+        String skValue = "POLICY#" + policyId;
+
+        if (!policyRepository.isExist(pkValue, skValue)) {
+            throw new PolicyNotFoundException("Policy not found for user: " + customerId);
+        }
+
+        policyRepository.delete(customerId, policyId);
+        return "Policy deleted successfully!";
+    }
 }

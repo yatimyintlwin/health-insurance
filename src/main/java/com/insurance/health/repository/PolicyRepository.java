@@ -12,4 +12,5 @@ public interface PolicyRepository {
     Optional<Policy> findById(String policyId);
     List<PolicyListByCustomerResponse> findPoliciesByCustomer(String customerId);
     void update(Policy policy);
+    void delete(String customerId, String policyId);
 }

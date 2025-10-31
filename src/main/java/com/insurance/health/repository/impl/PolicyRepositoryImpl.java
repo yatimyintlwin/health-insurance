@@ -153,4 +153,43 @@ public class PolicyRepositoryImpl implements PolicyRepository {
             throw new RuntimeException("Failed to update policy: " + policy.getPolicyId(), e);
         }
     }
+
+    @Override
+    public void delete(String customerId, String policyId) {
+        try {
+            Map<String, AttributeValue> customerKey = Map.of(
+                    "pk", AttributeValue.fromS("CUSTOMER#" + customerId),
+                    "sk", AttributeValue.fromS("POLICY#" + policyId)
+            );
+
+            Map<String, AttributeValue> detailsKey = Map.of(
+                    "pk", AttributeValue.fromS("POLICY#" + policyId),
+                    "sk", AttributeValue.fromS("DETAILS")
+            );
+
+            TransactWriteItemsRequest deleteTransaction = TransactWriteItemsRequest.builder()
+                    .transactItems(List.of(
+                            TransactWriteItem.builder()
+                                    .delete(Delete.builder()
+                                            .tableName(tableName)
+                                            .key(customerKey)
+                                            .conditionExpression("attribute_exists(pk) AND attribute_exists(sk)")
+                                            .build())
+                                    .build(),
+                            TransactWriteItem.builder()
+                                    .delete(Delete.builder()
+                                            .tableName(tableName)
+                                            .key(detailsKey)
+                                            .conditionExpression("attribute_exists(pk) AND attribute_exists(sk)")
+                                            .build())
+                                    .build()
+                    ))
+                    .build();
+
+            dynamoDbClient.transactWriteItems(deleteTransaction);
+
+        } catch (DynamoDbException e) {
+            throw new RuntimeException("Failed to delete policy: " + policyId, e);
+        }
+    }
 }

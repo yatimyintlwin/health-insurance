@@ -11,4 +11,5 @@ public interface PolicyService {
     Policy getPolicyForCustomer(String customerId, String policyId);
     List<PolicyListByCustomerResponse> listPoliciesByCustomer(String customerId);
     Policy updatePolicy(Policy policy);
+    String deletePolicy(String customerId, String policyId);
 }

@@ -26,7 +26,7 @@ public class PolicyController {
         return ResponseEntity.ok(created);
     }
 
-    @GetMapping("/detail")
+    @GetMapping("/details")
     @PreAuthorize("hasRole('ADMIN') or #customerId == authentication.name")
     public ResponseEntity<Policy> getPolicyDetail(@RequestParam String customerId,
                                                   @RequestParam String policyId) {
@@ -34,17 +34,25 @@ public class PolicyController {
         return ResponseEntity.ok(policy);
     }
 
-    @GetMapping("/list")
+    @GetMapping("/lists")
     @PreAuthorize("#customerId == principal.username or hasRole('ADMIN')")
     public ResponseEntity<List<PolicyListByCustomerResponse>> listPolicies(@RequestParam String customerId) {
         List<PolicyListByCustomerResponse> policies = policyService.listPoliciesByCustomer(customerId);
         return ResponseEntity.ok(policies);
     }
 
-    @PutMapping("/update")
+    @PutMapping("/updates")
     @PreAuthorize("#policy.userId == principal.username or hasRole('ADMIN')")
     public ResponseEntity<Policy> updatePolicy(@RequestBody Policy policy) {
         Policy updatedPolicy = policyService.updatePolicy(policy);
         return ResponseEntity.ok(updatedPolicy);
+    }
+
+    @DeleteMapping("/cancels")
+    @PreAuthorize("hasRole('ADMIN') or #customerId == principal.username")
+    public ResponseEntity<String> cancelPolicy(@RequestParam String customerId,
+                                               @RequestParam String policyId) {
+        String result = policyService.deletePolicy(customerId, policyId);
+        return ResponseEntity.ok(result);
     }
 }
