@@ -39,6 +39,12 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, "Invalid Credentials", ex.getMessage());
     }
 
+    @ExceptionHandler(DatabaseOperationException.class)
+    public ResponseEntity<Object> handleDatabaseOperationException(DatabaseOperationException ex) {
+        log.error("Database operation failed: {}", ex.getMessage(), ex);
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Database Error", ex.getMessage());
+    }
+
     @ExceptionHandler(DynamoDbException.class)
     public ResponseEntity<Object> handleDynamoDbException(DynamoDbException ex) {
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Database operation failed", ex.getMessage());
