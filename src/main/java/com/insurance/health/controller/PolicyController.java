@@ -43,12 +43,8 @@ public class PolicyController {
 
     @PutMapping("/update")
     @PreAuthorize("#policy.userId == principal.username or hasRole('ADMIN')")
-    public ResponseEntity<String> updatePolicy(@RequestBody Policy policy) {
-        boolean updated = policyService.updatePolicy(policy);
-        if (updated) {
-            return ResponseEntity.ok("Policy updated successfully");
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<Policy> updatePolicy(@RequestBody Policy policy) {
+        Policy updatedPolicy = policyService.updatePolicy(policy);
+        return ResponseEntity.ok(updatedPolicy);
     }
 }

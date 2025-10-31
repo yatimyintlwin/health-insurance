@@ -48,11 +48,13 @@ public class PolicyServiceImpl implements PolicyService {
         String skValue = "POLICY#" + policyId;
 
         if (!policyRepository.isExist(pkValue, skValue)) {
-            throw new PolicyNotFoundException("Policy not found or not owned by customer: " + policyId);
+            throw new PolicyNotFoundException(
+                    "Policy not found or not owned by customer: " + policyId);
         }
 
         return policyRepository.findById(policyId)
-                .orElseThrow(() -> new PolicyNotFoundException("Policy not found: " + policyId));
+                .orElseThrow(() -> new PolicyNotFoundException(
+                        "Policy details not found for policy: " + policyId));
     }
 
     @Override
@@ -61,15 +63,17 @@ public class PolicyServiceImpl implements PolicyService {
     }
 
     @Override
-    public boolean updatePolicy(Policy policy) {
+    public Policy updatePolicy(Policy policy) {
         String pkValue = "CUSTOMER#" + policy.getUserId();
         String skValue = "POLICY#" + policy.getPolicyId();
 
         if (!policyRepository.isExist(pkValue, skValue)) {
-            return false;
+            throw new PolicyNotFoundException(
+                    "Policy not found for user: " + policy.getUserId());
         }
 
         policyRepository.update(policy);
-        return true;
+
+        return policy;
     }
 }
