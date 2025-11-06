@@ -20,14 +20,14 @@ public class PolicyController {
     }
 
     @PostMapping
-    @PreAuthorize("#dto.userId == principal.username and hasRole('USER')")
+    @PreAuthorize("hasRole('USER') and #dto.userId == authentication.name")
     public ResponseEntity<Policy> createPolicy(@RequestBody PolicyDTO dto) {
         Policy created = policyService.createPolicy(dto);
         return ResponseEntity.ok(created);
     }
 
     @GetMapping("/details")
-    @PreAuthorize("hasRole('ADMIN') or #customerId == authentication.name")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and #customerId == authentication.name)")
     public ResponseEntity<Policy> getPolicyDetail(@RequestParam String customerId,
                                                   @RequestParam String policyId) {
         Policy policy = policyService.getPolicyForCustomer(customerId, policyId);
@@ -35,21 +35,21 @@ public class PolicyController {
     }
 
     @GetMapping("/lists")
-    @PreAuthorize("#customerId == principal.username or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and #customerId == authentication.name)")
     public ResponseEntity<List<PolicyListByCustomerResponse>> listPolicies(@RequestParam String customerId) {
         List<PolicyListByCustomerResponse> policies = policyService.listPoliciesByCustomer(customerId);
         return ResponseEntity.ok(policies);
     }
 
     @PutMapping("/updates")
-    @PreAuthorize("#policy.userId == principal.username or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and #policy.userId == authentication.name)")
     public ResponseEntity<Policy> updatePolicy(@RequestBody Policy policy) {
         Policy updatedPolicy = policyService.updatePolicy(policy);
         return ResponseEntity.ok(updatedPolicy);
     }
 
     @DeleteMapping("/cancels")
-    @PreAuthorize("hasRole('ADMIN') or #customerId == principal.username")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and #customerId == authentication.name)")
     public ResponseEntity<String> cancelPolicy(@RequestParam String customerId,
                                                @RequestParam String policyId) {
         String result = policyService.deletePolicy(customerId, policyId);
