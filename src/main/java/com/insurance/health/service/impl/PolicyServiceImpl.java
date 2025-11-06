@@ -7,6 +7,7 @@ import com.insurance.health.exception.PolicyNotFoundException;
 import com.insurance.health.exception.ResourceAlreadyExistException;
 import com.insurance.health.model.Policy;
 import com.insurance.health.repository.PolicyRepository;
+import com.insurance.health.service.EmailService;
 import com.insurance.health.service.PolicyService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,9 +23,11 @@ import java.util.UUID;
 public class PolicyServiceImpl implements PolicyService {
 
     private final PolicyRepository policyRepository;
+    private final EmailService emailService;
 
-    public PolicyServiceImpl(PolicyRepository policyRepository) {
+    public PolicyServiceImpl(PolicyRepository policyRepository, EmailService emailService) {
         this.policyRepository = policyRepository;
+        this.emailService = emailService;
     }
 
     @Override
@@ -46,7 +49,15 @@ public class PolicyServiceImpl implements PolicyService {
             policy.setEndDate(endDate);
             policy.setStatus("Pending");
 
-            return policyRepository.save(policy);
+            Policy saved = policyRepository.save(policy);
+
+            String subject = "Policy Created Successfully";
+            String message = String.format(
+                    "Dear %s,\nYour policy (%s) has been created successfully.\nStatus: %s",
+                    policy.getUserId(), policy.getPolicyId(), policy.getStatus());
+            emailService.sendPolicyNotification(request.getUserId(), subject, message);
+
+            return saved;
 
         } catch (ConditionalCheckFailedException ex) {
             throw new ResourceAlreadyExistException("Policy already exists for this customer");
@@ -86,7 +97,6 @@ public class PolicyServiceImpl implements PolicyService {
         }
     }
 
-    @Override
     public Policy updatePolicy(Policy policy) {
         try {
             String pkValue = "CUSTOMER#" + policy.getUserId();
@@ -97,6 +107,13 @@ public class PolicyServiceImpl implements PolicyService {
             }
 
             policyRepository.update(policy);
+
+            String subject = "Policy Updated Successfully";
+            String message = String.format(
+                    "Dear %s,\nYour policy (%s) has been updated.\nNew status: %s",
+                    policy.getUserId(), policy.getPolicyId(), policy.getStatus());
+            emailService.sendPolicyNotification(policy.getUserId(), subject, message);
+
             return policy;
 
         } catch (ConditionalCheckFailedException ex) {
