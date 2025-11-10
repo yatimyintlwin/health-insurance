@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -72,7 +73,7 @@ public class PolicyRepositoryImpl implements PolicyRepository {
     public Optional<Policy> findById(String policyId) {
         Map<String, AttributeValue> key = Map.of(
                 "pk", AttributeValue.fromS("POLICY#" + policyId),
-                "sk", AttributeValue.fromS("DETAILS")
+                "sk", AttributeValue.fromS("POLICY_DETAILS")
         );
 
         GetItemRequest request = GetItemRequest.builder()
@@ -143,7 +144,7 @@ public class PolicyRepositoryImpl implements PolicyRepository {
 
         Map<String, AttributeValue> detailsKey = Map.of(
                 "pk", AttributeValue.fromS("POLICY#" + policyId),
-                "sk", AttributeValue.fromS("DETAILS")
+                "sk", AttributeValue.fromS("POLICY_DETAILS")
         );
 
         TransactWriteItemsRequest deleteTransaction = TransactWriteItemsRequest.builder()
@@ -167,4 +168,67 @@ public class PolicyRepositoryImpl implements PolicyRepository {
 
         dynamoDbClient.transactWriteItems(deleteTransaction);
     }
+
+    @Override
+    public List<Map<String, AttributeValue>> findPoliciesToExpire(LocalDate today) {
+        QueryRequest queryRequest = QueryRequest.builder()
+                .tableName(tableName)
+                .indexName("EndDateIndex")
+                .keyConditionExpression("sk = :skVal AND endDate <= :today")
+                .expressionAttributeValues(Map.of(
+                        ":skVal", AttributeValue.fromS("POLICY_DETAILS"),
+                        ":today", AttributeValue.fromS(today.toString())
+                ))
+                .build();
+
+        QueryResponse response = dynamoDbClient.query(queryRequest);
+        return response.items();
+    }
+
+    @Override
+    public void updatePolicyStatusTransaction(String policyId, String newStatus) {
+        String pkPolicy = "POLICY#" + policyId;
+        String skPolicy = "POLICY_DETAILS";
+
+        Map<String, AttributeValue> key = Map.of(
+                "pk", AttributeValue.fromS(pkPolicy),
+                "sk", AttributeValue.fromS(skPolicy)
+        );
+
+        Update update = Update.builder()
+                .tableName(tableName)
+                .key(key)
+                .updateExpression("SET #status = :newStatus")
+                .expressionAttributeNames(Map.of("#status", "status"))
+                .expressionAttributeValues(Map.of(":newStatus", AttributeValue.fromS(newStatus)))
+                .conditionExpression("attribute_exists(pk) AND attribute_exists(sk)")
+                .build();
+
+        TransactWriteItemsRequest request = TransactWriteItemsRequest.builder()
+                .transactItems(List.of(TransactWriteItem.builder().update(update).build()))
+                .build();
+
+        dynamoDbClient.transactWriteItems(request);
+    }
+
+    public List<Map<String, AttributeValue>> findExpiredPoliciesToDelete(LocalDate today) {
+        LocalDate thresholdDate = today.minusDays(3);
+
+        QueryRequest queryRequest = QueryRequest.builder()
+                .tableName(tableName)
+                .indexName("EndDateIndex")
+                .keyConditionExpression("sk = :detailsKey AND endDate <= :thresholdDate")
+                .filterExpression("#status = :expiredStatus")
+                .expressionAttributeNames(Map.of("#status", "status"))
+                .expressionAttributeValues(Map.of(
+                        ":detailsKey", AttributeValue.fromS("POLICY_DETAILS"),
+                        ":thresholdDate", AttributeValue.fromS(thresholdDate.toString()),
+                        ":expiredStatus", AttributeValue.fromS("EXPIRED")
+                ))
+                .build();
+
+        QueryResponse response = dynamoDbClient.query(queryRequest);
+        return response.items();
+    }
+
 }

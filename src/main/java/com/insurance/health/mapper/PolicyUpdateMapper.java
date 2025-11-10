@@ -22,7 +22,7 @@ public class PolicyUpdateMapper {
     public static Map<String, AttributeValue> toDetailsItem(Policy policy) {
         Map<String, AttributeValue> item = new HashMap<>();
         item.put("pk", AttributeValue.fromS("POLICY#" + policy.getPolicyId()));
-        item.put("sk", AttributeValue.fromS("DETAILS"));
+        item.put("sk", AttributeValue.fromS("POLICY_DETAILS"));
         putCommonFields(item, policy);
         item.put("startDate", AttributeValue.fromS(policy.getStartDate().toString()));
         item.put("endDate", AttributeValue.fromS(policy.getEndDate().toString()));
