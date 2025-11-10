@@ -20,4 +20,6 @@ public interface PolicyRepository {
     List<Map<String, AttributeValue>> findPoliciesToExpire(LocalDate today);
 
     void updatePolicyStatusTransaction(String policyId, String newStatus);
+
+    List<Map<String, AttributeValue>> findExpiredPoliciesToDelete(LocalDate today);
 }
