@@ -4,6 +4,7 @@ import com.insurance.health.dto.PolicyDTO;
 import com.insurance.health.dto.PolicyListByCustomerResponse;
 import com.insurance.health.model.Policy;
 import com.insurance.health.service.PolicyService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -21,7 +22,7 @@ public class PolicyController {
 
     @PostMapping
     @PreAuthorize("hasRole('USER') and #dto.userId == authentication.name")
-    public ResponseEntity<Policy> createPolicy(@RequestBody PolicyDTO dto) {
+    public ResponseEntity<Policy> createPolicy(@Valid @RequestBody PolicyDTO dto) {
         Policy created = policyService.createPolicy(dto);
         return ResponseEntity.ok(created);
     }
@@ -43,7 +44,7 @@ public class PolicyController {
 
     @PutMapping("/updates")
     @PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and #policy.userId == authentication.name)")
-    public ResponseEntity<Policy> updatePolicy(@RequestBody Policy policy) {
+    public ResponseEntity<Policy> updatePolicy(@Valid @RequestBody Policy policy) {
         Policy updatedPolicy = policyService.updatePolicy(policy);
         return ResponseEntity.ok(updatedPolicy);
     }

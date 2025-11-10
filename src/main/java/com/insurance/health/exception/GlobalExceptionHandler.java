@@ -3,6 +3,8 @@ package com.insurance.health.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import software.amazon.awssdk.core.exception.SdkClientException;
@@ -15,13 +17,25 @@ import java.util.Map;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-    private ResponseEntity<Object> buildResponse(HttpStatus status, String errorType, String message) {
+    private ResponseEntity<Object> buildResponse(HttpStatus status, String errorType, Object message) {
         Map<String, Object> body = new HashMap<>();
         body.put("timestamp", LocalDateTime.now());
         body.put("status", status.value());
         body.put("error", errorType);
         body.put("message", message);
         return new ResponseEntity<>(body, status);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Object> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        Map<String, String> validationErrors = new HashMap<>();
+        ex.getBindingResult().getAllErrors().forEach(error -> {
+            String fieldName = ((FieldError) error).getField();
+            String errorMessage = error.getDefaultMessage();
+            validationErrors.put(fieldName, errorMessage);
+        });
+
+        return buildResponse(HttpStatus.BAD_REQUEST, "Validation Error", validationErrors);
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
