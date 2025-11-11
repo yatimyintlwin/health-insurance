@@ -233,6 +233,16 @@ public class PolicyRepositoryImpl implements PolicyRepository {
             QueryResponse response = dynamoDbClient.query(QueryRequest.builder()
                     .tableName(tableName)
                     .indexName("EndDateIndex")
+//                    .indexName("GSI2")
+//                    .keyConditionExpression("#status = :skVal AND #endDate <= :today")
+//                    .expressionAttributeNames(Map.of(
+//                            "#status", "status",
+//                            "#endDate", "endDate"
+//                    ))
+//                    .expressionAttributeValues(Map.of(
+//                            ":skVal", AttributeValue.fromS("Active"),
+//                            ":today", AttributeValue.fromS(today.toString())
+//                    ))
                     .keyConditionExpression("sk = :skVal AND endDate <= :today")
                     .expressionAttributeValues(Map.of(
                             ":skVal", AttributeValue.fromS("POLICY_DETAILS"),
@@ -291,11 +301,13 @@ public class PolicyRepositoryImpl implements PolicyRepository {
 
             QueryResponse response = dynamoDbClient.query(QueryRequest.builder()
                     .tableName(tableName)
+//                    .indexName("GSI2")
                     .indexName("EndDateIndex")
                     .keyConditionExpression("sk = :detailsKey AND endDate <= :thresholdDate")
                     .filterExpression("#status = :expiredStatus")
                     .expressionAttributeNames(Map.of("#status", "status"))
                     .expressionAttributeValues(Map.of(
+//                            ":detailsKey", AttributeValue.fromS("Expired"),
                             ":detailsKey", AttributeValue.fromS("POLICY_DETAILS"),
                             ":thresholdDate", AttributeValue.fromS(thresholdDate.toString()),
                             ":expiredStatus", AttributeValue.fromS("EXPIRED")
