@@ -27,7 +27,6 @@ public class UserController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<AppUser>> listAllUsers() {
         List<AppUser> users = userService.getAllUsers();
         return ResponseEntity.ok(users);
@@ -44,7 +43,6 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> deleteUser(@PathVariable String id) {
         userService.deleteUser(id);
         return ResponseEntity.ok("Successfully deleted user");
