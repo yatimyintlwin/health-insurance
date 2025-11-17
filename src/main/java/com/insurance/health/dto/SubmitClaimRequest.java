@@ -10,6 +10,9 @@ public class SubmitClaimRequest {
     @NotBlank(message = "Policy ID is required")
     private String policyId;
 
+    @NotBlank(message = "User ID cannot be blank")
+    private String userId;
+
     @NotBlank(message = "Claim type is required")
     private String claimType;
 

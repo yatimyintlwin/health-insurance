@@ -10,6 +10,7 @@ import java.time.LocalDate;
 public class SubmitClaimResponse {
     private String claimId;
     private String policyId;
+    private String userId;
     private String claimType;
     private String userName;
     private Double claimAmount;

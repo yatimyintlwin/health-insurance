@@ -67,12 +67,15 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("ADMIN")
 
                         .requestMatchers(HttpMethod.POST, "/api/policies").hasRole("USER")
-                        .requestMatchers(HttpMethod.GET, "/api/policies/details").hasAnyRole("ADMIN", "USER")
-                        .requestMatchers(HttpMethod.GET, "/api/policies/lists").hasAnyRole("ADMIN", "USER")
-                        .requestMatchers(HttpMethod.PUT, "/api/policies/updates").hasAnyRole("ADMIN", "USER")
-                        .requestMatchers(HttpMethod.DELETE, "/api/policies/cancels").hasAnyRole("ADMIN", "USER")
+                        .requestMatchers(HttpMethod.GET, "/api/policies/*/users/*").hasAnyRole("ADMIN", "USER")
+                        .requestMatchers(HttpMethod.GET, "/api/users/*/policies").hasAnyRole("ADMIN", "USER")
+                        .requestMatchers(HttpMethod.PUT, "/api/policies/*").hasAnyRole("ADMIN", "USER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/policies/*/users/*").hasAnyRole("ADMIN", "USER")
 
-                        .requestMatchers(HttpMethod.POST, "/api/claims/submits").hasRole("USER")
+                        .requestMatchers(HttpMethod.POST, "/api/claims").hasRole("USER")
+                        .requestMatchers(HttpMethod.GET, "/api/claims/*/users/*").hasAnyRole("ADMIN", "USER")
+                        .requestMatchers(HttpMethod.GET, "/api/policies/*/users/*/claims").hasAnyRole("ADMIN", "USER")
+                        .requestMatchers(HttpMethod.PATCH, "/api/claims/*/status").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 );
 
