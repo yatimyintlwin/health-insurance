@@ -53,11 +53,6 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, "Invalid Credentials", ex.getMessage());
     }
 
-    @ExceptionHandler(UnauthorizedException.class)
-    public ResponseEntity<Object> handleUnauthorized(UnauthorizedException ex) {
-        return buildResponse(HttpStatus.FORBIDDEN, "Unauthorized", ex.getMessage());
-    }
-
     @ExceptionHandler(InvalidOperationException.class)
     public ResponseEntity<Object> handleInvalidOperation(InvalidOperationException ex) {
         return buildResponse(HttpStatus.BAD_REQUEST, "Invalid Operation", ex.getMessage());
