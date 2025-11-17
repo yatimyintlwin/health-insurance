@@ -65,30 +65,6 @@ public class PolicyRepositoryImpl implements PolicyRepository {
     }
 
     @Override
-    public boolean isExist(String pkValue, String skValue) {
-        try {
-            log.debug("Checking existence for item pk={}, sk={}", pkValue, skValue);
-            Map<String, AttributeValue> key = Map.of(
-                    "pk", AttributeValue.builder().s(pkValue).build(),
-                    "sk", AttributeValue.builder().s(skValue).build()
-            );
-
-            GetItemResponse response = dynamoDbClient.getItem(GetItemRequest.builder()
-                    .tableName(tableName)
-                    .key(key)
-                    .build());
-
-            boolean exists = response.hasItem();
-            log.debug("Item existence result: {} (pk={}, sk={})", exists, pkValue, skValue);
-            return exists;
-
-        } catch (DynamoDbException ex) {
-            log.error("Database error while checking existence (pk={}, sk={}): {}", pkValue, skValue, ex.getMessage(), ex);
-            throw new DatabaseOperationException("Failed to check item existence", ex);
-        }
-    }
-
-    @Override
     public Optional<Policy> findById(String policyId) {
         try {
             log.info("Fetching policy by ID: {}", policyId);
@@ -118,10 +94,9 @@ public class PolicyRepositoryImpl implements PolicyRepository {
     }
 
     @Override
-    public List<PolicyListByCustomerResponse> findPoliciesByCustomer(String customerId) {
+    public List<PolicyListByCustomerResponse> findPoliciesByCustomer(String userId) {
         try {
-            log.info("Querying policies for customer: {}", customerId);
-            String pkValue = "CUSTOMER#" + customerId;
+            String pkValue = "CUSTOMER#" + userId;
 
             QueryResponse response = dynamoDbClient.query(QueryRequest.builder()
                     .tableName(tableName)
@@ -133,15 +108,15 @@ public class PolicyRepositoryImpl implements PolicyRepository {
                     .build());
 
             if (response.items().isEmpty()) {
-                log.info("No policies found for customer: {}", customerId);
+                log.info("No policies found for customer: {}", userId);
             } else {
-                log.info("Found {} policies for customer: {}", response.count(), customerId);
+                log.info("Found {} policies for customer: {}", response.count(), userId);
             }
 
-            return PolicyListMapper.fromQueryItems(customerId, response.items());
+            return PolicyListMapper.fromQueryItems(userId, response.items());
 
         } catch (DynamoDbException ex) {
-            log.error("Database error while querying policies for customer {}: {}", customerId, ex.getMessage(), ex);
+            log.error("Database error while querying policies for customer {}: {}", userId, ex.getMessage(), ex);
             throw new DatabaseOperationException("Failed to query policies for customer", ex);
         }
     }
@@ -185,11 +160,11 @@ public class PolicyRepositoryImpl implements PolicyRepository {
     }
 
     @Override
-    public void delete(String customerId, String policyId) {
+    public void delete(String policyId, String userId) {
         try {
-            log.warn("Deleting policy: {} for customer: {}", policyId, customerId);
+            log.warn("Deleting policy: {} for customer: {}", policyId, userId);
             Map<String, AttributeValue> customerKey = Map.of(
-                    "pk", AttributeValue.fromS("CUSTOMER#" + customerId),
+                    "pk", AttributeValue.fromS("CUSTOMER#" + userId),
                     "sk", AttributeValue.fromS("POLICY#" + policyId)
             );
 

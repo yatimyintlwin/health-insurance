@@ -8,8 +8,10 @@ import java.util.List;
 
 public interface PolicyService {
     Policy createPolicy(PolicyDTO request);
-    Policy getPolicyForCustomer(String customerId, String policyId);
-    List<PolicyListByCustomerResponse> listPoliciesByCustomer(String customerId);
-    Policy updatePolicy(Policy policy);
+    Policy getPolicyDetailByUser(String customerId, String policyId);
+    List<PolicyListByCustomerResponse> listPoliciesByUser(String customerId);
+
+    Policy updatePolicy(String policyId, Policy policy);
+
     String deletePolicy(String customerId, String policyId);
 }

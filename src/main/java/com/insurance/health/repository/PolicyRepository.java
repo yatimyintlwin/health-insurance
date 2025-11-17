@@ -11,7 +11,7 @@ import java.util.Optional;
 
 public interface PolicyRepository {
     Policy save(Policy policy);
-    boolean isExist(String pkValue, String skValue);
+//    boolean isExist(String pkValue, String skValue);
     Optional<Policy> findById(String policyId);
     List<PolicyListByCustomerResponse> findPoliciesByCustomer(String customerId);
     void update(Policy policy);

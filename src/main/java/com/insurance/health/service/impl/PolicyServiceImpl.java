@@ -8,10 +8,12 @@ import com.insurance.health.repository.PolicyRepository;
 import com.insurance.health.service.EmailService;
 import com.insurance.health.service.PolicyService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -55,33 +57,26 @@ public class PolicyServiceImpl implements PolicyService {
     }
 
     @Override
-    public Policy getPolicyForCustomer(String customerId, String policyId) {
-        String pkValue = "CUSTOMER#" + customerId;
-        String skValue = "POLICY#" + policyId;
+    public Policy getPolicyDetailByUser(String policyId, String userId) {
 
-        if (!policyRepository.isExist(pkValue, skValue)) {
-            throw new PolicyNotFoundException("Policy not found or not owned by customer: " + policyId);
+        Optional<Policy> policy = policyRepository.findById(policyId);
+        if (policy.isEmpty()) {
+            throw new PolicyNotFoundException("Policy not found for user: " + userId);
+        }
+        if (!policy.get().getUserId().equals(userId)) {
+            throw new AccessDeniedException("You are not allowed to view this claim");
         }
 
-        return policyRepository.findById(policyId)
-                .orElseThrow(() -> new PolicyNotFoundException(
-                        "Policy details not found for policy: " + policyId));
+        return policy.get();
     }
 
     @Override
-    public List<PolicyListByCustomerResponse> listPoliciesByCustomer(String customerId) {
-        return policyRepository.findPoliciesByCustomer(customerId);
+    public List<PolicyListByCustomerResponse> listPoliciesByUser(String userId) {
+        return policyRepository.findPoliciesByCustomer(userId);
     }
 
     @Override
-    public Policy updatePolicy(Policy policy) {
-        String pkValue = "CUSTOMER#" + policy.getUserId();
-        String skValue = "POLICY#" + policy.getPolicyId();
-
-        if (!policyRepository.isExist(pkValue, skValue)) {
-            throw new PolicyNotFoundException("Policy not found for user: " + policy.getUserId());
-        }
-
+    public Policy updatePolicy(String policyId, Policy policy) {
         policyRepository.update(policy);
 
         String subject = "Policy Updated Successfully";
@@ -94,15 +89,8 @@ public class PolicyServiceImpl implements PolicyService {
     }
 
     @Override
-    public String deletePolicy(String customerId, String policyId) {
-        String pkValue = "CUSTOMER#" + customerId;
-        String skValue = "POLICY#" + policyId;
-
-        if (!policyRepository.isExist(pkValue, skValue)) {
-            throw new PolicyNotFoundException("Policy not found for user: " + customerId);
-        }
-
-        policyRepository.delete(customerId, policyId);
+    public String deletePolicy(String policyId, String userId) {
+        policyRepository.delete(policyId, userId);
         return "Policy deleted successfully!";
     }
 }

@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/policies")
+@RequestMapping("/api")
 public class PolicyController {
     private final PolicyService policyService;
 
@@ -20,40 +20,41 @@ public class PolicyController {
         this.policyService = policyService;
     }
 
-    @PostMapping
-    @PreAuthorize("hasRole('USER') and #dto.userId == authentication.name")
-    public ResponseEntity<Policy> createPolicy(@Valid @RequestBody PolicyDTO dto) {
-        Policy created = policyService.createPolicy(dto);
+    @PostMapping("/policies")
+    @PreAuthorize("#policyDTO.userId == authentication.name")
+    public ResponseEntity<Policy> createPolicy(@Valid @RequestBody PolicyDTO policyDTO) {
+        Policy created = policyService.createPolicy(policyDTO);
         return ResponseEntity.ok(created);
     }
 
-    @GetMapping("/details")
-    @PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and #customerId == authentication.name)")
-    public ResponseEntity<Policy> getPolicyDetail(@RequestParam String customerId,
-                                                  @RequestParam String policyId) {
-        Policy policy = policyService.getPolicyForCustomer(customerId, policyId);
+    @GetMapping("/policies/{policyId}/users/{userId}")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and #userId == authentication.name)")
+    public ResponseEntity<Policy> getPolicyDetail(@PathVariable String policyId,
+                                                  @PathVariable String userId) {
+        Policy policy = policyService.getPolicyDetailByUser(policyId, userId);
         return ResponseEntity.ok(policy);
     }
 
-    @GetMapping("/lists")
-    @PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and #customerId == authentication.name)")
-    public ResponseEntity<List<PolicyListByCustomerResponse>> listPolicies(@RequestParam String customerId) {
-        List<PolicyListByCustomerResponse> policies = policyService.listPoliciesByCustomer(customerId);
+    @GetMapping("/users/{userId}/policies")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and #userId == authentication.name)")
+    public ResponseEntity<List<PolicyListByCustomerResponse>> listPolicies(@PathVariable String userId) {
+        List<PolicyListByCustomerResponse> policies = policyService.listPoliciesByUser(userId);
         return ResponseEntity.ok(policies);
     }
 
-    @PutMapping("/updates")
+    @PutMapping("/policies/{policyId}")
     @PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and #policy.userId == authentication.name)")
-    public ResponseEntity<Policy> updatePolicy(@Valid @RequestBody Policy policy) {
-        Policy updatedPolicy = policyService.updatePolicy(policy);
+    public ResponseEntity<Policy> updatePolicy(@PathVariable String policyId,
+                                               @Valid @RequestBody Policy policy) {
+        Policy updatedPolicy = policyService.updatePolicy(policyId, policy);
         return ResponseEntity.ok(updatedPolicy);
     }
 
-    @DeleteMapping("/cancels")
-    @PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and #customerId == authentication.name)")
-    public ResponseEntity<String> cancelPolicy(@RequestParam String customerId,
-                                               @RequestParam String policyId) {
-        String result = policyService.deletePolicy(customerId, policyId);
+    @DeleteMapping("/policies/{policyId}/users/{userId}")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and #userId == authentication.name)")
+    public ResponseEntity<String> deletePolicy(@PathVariable String policyId,
+                                               @PathVariable String userId) {
+        String result = policyService.deletePolicy(policyId, userId);
         return ResponseEntity.ok(result);
     }
 }
