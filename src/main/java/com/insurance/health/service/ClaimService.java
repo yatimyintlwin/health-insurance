@@ -2,7 +2,7 @@ package com.insurance.health.service;
 
 import com.insurance.health.dto.SubmitClaimRequest;
 import com.insurance.health.dto.SubmitClaimResponse;
-import com.insurance.health.dto.UpdateClaimStatusRequest;
+import com.insurance.health.dto.UpdateClaimRequest;
 import com.insurance.health.model.Claim;
 
 import java.util.List;
@@ -15,5 +15,5 @@ public interface ClaimService {
 
     List<Claim> getAllClaimsByPolicy(String policyId, String userId);
 
-    Claim updateClaimStatus(String claimId, UpdateClaimStatusRequest request);
+    Claim updateClaim(UpdateClaimRequest request);
 }

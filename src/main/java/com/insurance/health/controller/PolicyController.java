@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/policies")
 public class PolicyController {
     private final PolicyService policyService;
 
@@ -20,14 +20,14 @@ public class PolicyController {
         this.policyService = policyService;
     }
 
-    @PostMapping("/policies")
+    @PostMapping
     @PreAuthorize("#policyDTO.userId == authentication.name")
     public ResponseEntity<Policy> createPolicy(@Valid @RequestBody PolicyDTO policyDTO) {
         Policy created = policyService.createPolicy(policyDTO);
         return ResponseEntity.ok(created);
     }
 
-    @GetMapping("/policies/{policyId}/users/{userId}")
+    @GetMapping("/{policyId}/users/{userId}")
     @PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and #userId == authentication.name)")
     public ResponseEntity<Policy> getPolicyDetail(@PathVariable String policyId,
                                                   @PathVariable String userId) {
@@ -35,14 +35,14 @@ public class PolicyController {
         return ResponseEntity.ok(policy);
     }
 
-    @GetMapping("/users/{userId}/policies")
+    @GetMapping("/users/{userId}")
     @PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and #userId == authentication.name)")
     public ResponseEntity<List<PolicyListByCustomerResponse>> listPolicies(@PathVariable String userId) {
         List<PolicyListByCustomerResponse> policies = policyService.listPoliciesByUser(userId);
         return ResponseEntity.ok(policies);
     }
 
-    @PutMapping("/policies/{policyId}")
+    @PutMapping("/{policyId}")
     @PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and #policy.userId == authentication.name)")
     public ResponseEntity<Policy> updatePolicy(@PathVariable String policyId,
                                                @Valid @RequestBody Policy policy) {
@@ -50,7 +50,7 @@ public class PolicyController {
         return ResponseEntity.ok(updatedPolicy);
     }
 
-    @DeleteMapping("/policies/{policyId}/users/{userId}")
+    @DeleteMapping("/{policyId}/users/{userId}")
     @PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and #userId == authentication.name)")
     public ResponseEntity<String> deletePolicy(@PathVariable String policyId,
                                                @PathVariable String userId) {

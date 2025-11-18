@@ -1,5 +1,6 @@
 package com.insurance.health.repository.impl;
 
+import com.insurance.health.dto.UpdateClaimRequest;
 import com.insurance.health.exception.DatabaseOperationException;
 import com.insurance.health.mapper.ClaimMapper;
 import com.insurance.health.model.Claim;
@@ -10,6 +11,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -117,7 +119,66 @@ public class ClaimRepositoryImpl implements ClaimRepository {
     }
 
     @Override
-    public Map<String, AttributeValue> updateClaimStatus(String claimId, Map<String, AttributeValue> updates) {
-        return null;
+    public Map<String, AttributeValue> updateClaim(UpdateClaimRequest request) {
+        Map<String, AttributeValue> updates = new HashMap<>();
+        updates.put("status", AttributeValue.fromS(request.getStatus()));
+
+        if (request.getApprovedAmount() != null) {
+            updates.put("approvedAmount", AttributeValue.fromN(String.valueOf(request.getApprovedAmount())));
+        }
+        if ("APPROVED".equalsIgnoreCase(request.getStatus())) {
+            updates.put("approvedDate", AttributeValue.fromS(LocalDate.now().toString()));
+        } else if ("REJECTED".equalsIgnoreCase(request.getStatus())) {
+            updates.put("rejectedDate", AttributeValue.fromS(LocalDate.now().toString()));
+        }
+
+        Map<String, String> expressionNames = new HashMap<>();
+        Map<String, AttributeValue> expressionValues = new HashMap<>();
+        StringBuilder updateExpression = new StringBuilder("SET ");
+        boolean firstItem = true;
+
+        for (String key : updates.keySet()) {
+            if (!firstItem) updateExpression.append(", ");
+            String attrNamePlaceholder = "#" + key;
+            String attrValuePlaceholder = ":" + key;
+            updateExpression.append(attrNamePlaceholder).append(" = ").append(attrValuePlaceholder);
+            expressionNames.put(attrNamePlaceholder, key);
+            expressionValues.put(attrValuePlaceholder, updates.get(key));
+            firstItem = false;
+        }
+
+        TransactWriteItemsRequest transactionRequest = TransactWriteItemsRequest.builder()
+                .transactItems(List.of(
+                        TransactWriteItem.builder()
+                                .update(Update.builder()
+                                        .tableName(tableName)
+                                        .key(Map.of(
+                                                "pk", AttributeValue.fromS("CLAIM#" + request.getClaimId()),
+                                                "sk", AttributeValue.fromS("DETAILS")
+                                        ))
+                                        .updateExpression(updateExpression.toString())
+                                        .expressionAttributeNames(expressionNames)
+                                        .expressionAttributeValues(expressionValues)
+                                        .build())
+                                .build(),
+                        TransactWriteItem.builder()
+                                .update(Update.builder()
+                                        .tableName(tableName)
+                                        .key(Map.of(
+                                                "pk", AttributeValue.fromS("POLICY#" + request.getPolicyId()),
+                                                "sk", AttributeValue.fromS("CLAIM#" + request.getClaimId())
+                                        ))
+                                        .updateExpression(updateExpression.toString())
+                                        .expressionAttributeNames(expressionNames)
+                                        .expressionAttributeValues(expressionValues)
+                                        .build())
+                                .build()
+                ))
+                .build();
+
+        dynamoDbClient.transactWriteItems(transactionRequest);
+
+        return findById(request.getClaimId()).orElseThrow(() ->
+                new DatabaseOperationException("Failed to fetch updated claim: " + request.getClaimId()));
     }
 }

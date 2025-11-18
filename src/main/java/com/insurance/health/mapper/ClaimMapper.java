@@ -28,6 +28,20 @@ public class ClaimMapper {
         }
 
         claim.setStatus(item.get("status") != null ? item.get("status").s() : null);
+        
+        try {
+            claim.setApprovedDate(item.get("approvedDate") != null ? LocalDate.parse(item.get("approvedDate").s()) : null);
+        } catch (Exception e) {
+            claim.setApprovedDate(null);
+        }
+        
+        try {
+            claim.setRejectedDate(item.get("rejectedDate") != null ? LocalDate.parse(item.get("rejectedDate").s()) : null);
+        } catch (Exception e) {
+            claim.setRejectedDate(null);
+        }
+        
+        claim.setApprovedAmount(item.get("approvedAmount") != null ? Double.parseDouble(item.get("approvedAmount").n()) : null);
 
         return claim;
     }

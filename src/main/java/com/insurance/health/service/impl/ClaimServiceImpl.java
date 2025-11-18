@@ -2,7 +2,7 @@ package com.insurance.health.service.impl;
 
 import com.insurance.health.dto.SubmitClaimRequest;
 import com.insurance.health.dto.SubmitClaimResponse;
-import com.insurance.health.dto.UpdateClaimStatusRequest;
+import com.insurance.health.dto.UpdateClaimRequest;
 import com.insurance.health.exception.ClaimNotFoundException;
 import com.insurance.health.exception.InvalidOperationException;
 import com.insurance.health.exception.ResourceNotFoundException;
@@ -80,8 +80,8 @@ public class ClaimServiceImpl implements ClaimService {
     }
 
     @Override
-    public Claim updateClaimStatus(String claimId, UpdateClaimStatusRequest request) {
-
-        return null;
+    public Claim updateClaim(UpdateClaimRequest request) {
+        Map<String, AttributeValue> updatedItem = claimRepository.updateClaim(request);
+        return claimMapper.mapToClaim(updatedItem);
     }
 }

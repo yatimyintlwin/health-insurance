@@ -1,5 +1,6 @@
 package com.insurance.health.repository;
 
+import com.insurance.health.dto.UpdateClaimRequest;
 import com.insurance.health.model.Claim;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
@@ -12,7 +13,7 @@ public interface ClaimRepository {
 
     List<Map<String, AttributeValue>> findAllByPolicyId(String policyId);
 
-    Map<String, AttributeValue> updateClaimStatus(String claimId, Map<String, AttributeValue> updates);
-
     Optional<Map<String, AttributeValue>> findById(String claimId);
+
+    Map<String, AttributeValue> updateClaim(UpdateClaimRequest request);
 }
